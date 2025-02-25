@@ -43,6 +43,10 @@ const EditTaskDialog = ({ task, open, onClose, onUpdateTask }: EditTaskDialogPro
     onClose();
   };
 
+  const handleStatusChange = (value: string) => {
+    setStatus(value as "todo" | "in-progress" | "done");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -84,7 +88,7 @@ const EditTaskDialog = ({ task, open, onClose, onUpdateTask }: EditTaskDialogPro
           </div>
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={handleStatusChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>

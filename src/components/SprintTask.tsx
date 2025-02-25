@@ -2,19 +2,28 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Task } from "@/types/task";
+import { Sprint } from "@/types/sprint";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Grip, Trash, Edit } from "lucide-react";
+import { Grip, Trash, Edit, MoveRight } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import EditTaskDialog from "./EditTaskDialog";
 
 interface SprintTaskProps {
   task: Task;
+  sprints: Sprint[];
   onDelete: (id: string) => void;
   onUpdate: (task: Task) => void;
+  onMove: (taskId: string, sprintId: string) => void;
 }
 
-const SprintTask = ({ task, onDelete, onUpdate }: SprintTaskProps) => {
+const SprintTask = ({ task, sprints, onDelete, onUpdate, onMove }: SprintTaskProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const {
     attributes,
@@ -94,6 +103,25 @@ const SprintTask = ({ task, onDelete, onUpdate }: SprintTaskProps) => {
                 <p className="text-sm text-muted-foreground">{task.description}</p>
               </div>
               <div className="flex items-center gap-2">
+                {sprints.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoveRight className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {sprints.map((sprint) => (
+                        <DropdownMenuItem
+                          key={sprint.id}
+                          onClick={() => onMove(task.id, sprint.id)}
+                        >
+                          Move to {sprint.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
