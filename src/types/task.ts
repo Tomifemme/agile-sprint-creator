@@ -6,4 +6,5 @@ export interface Task {
   priority: string;
   points: number;
   status: "todo" | "in-progress" | "done";
+  assignees: string[]; // Array of user IDs
 }

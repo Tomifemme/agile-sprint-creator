@@ -1,4 +1,3 @@
-
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Task } from "@/types/task";
@@ -14,6 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import EditTaskDialog from "./EditTaskDialog";
+import { User } from "@/types/user";
+import { Avatar, AvatarGroup } from "@/components/ui/avatar";
+
+const MOCK_USERS: User[] = [
+  { id: "1", name: "John Doe", avatarUrl: "https://github.com/shadcn.png" },
+  { id: "2", name: "Jane Smith", avatarUrl: "https://github.com/shadcn.png" },
+  { id: "3", name: "Bob Johnson", avatarUrl: "https://github.com/shadcn.png" },
+];
 
 interface SprintTaskProps {
   task: Task;
@@ -157,6 +164,23 @@ const SprintTask = ({ task, sprints, onDelete, onUpdate, onMove }: SprintTaskPro
               <span className="text-xs text-muted-foreground">
                 {task.points} points
               </span>
+              {task.assignees.length > 0 && (
+                <AvatarGroup>
+                  {task.assignees.map((userId) => {
+                    const user = MOCK_USERS.find((u) => u.id === userId);
+                    if (!user) return null;
+                    return (
+                      <Avatar
+                        key={user.id}
+                        className="w-6 h-6"
+                        title={user.name}
+                      >
+                        <img src={user.avatarUrl} alt={user.name} />
+                      </Avatar>
+                    );
+                  })}
+                </AvatarGroup>
+              )}
             </div>
           </div>
         </div>
