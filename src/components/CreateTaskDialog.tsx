@@ -18,6 +18,7 @@ const CreateTaskDialog = ({ open, onClose, onCreateTask }: CreateTaskDialogProps
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("medium");
   const [points, setPoints] = useState("1");
+  const [status, setStatus] = useState<"todo" | "in-progress" | "done">("todo");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,13 +28,14 @@ const CreateTaskDialog = ({ open, onClose, onCreateTask }: CreateTaskDialogProps
       description,
       priority,
       points: Number(points),
-      status: "todo",
+      status,
     };
     onCreateTask(newTask);
     setTitle("");
     setDescription("");
     setPriority("medium");
     setPoints("1");
+    setStatus("todo");
   };
 
   return (
@@ -72,6 +74,19 @@ const CreateTaskDialog = ({ open, onClose, onCreateTask }: CreateTaskDialogProps
                 <SelectItem value="high">High</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todo">To Do</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="done">Done</SelectItem>
               </SelectContent>
             </Select>
           </div>

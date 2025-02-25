@@ -19,12 +19,14 @@ const EditTaskDialog = ({ task, open, onClose, onUpdateTask }: EditTaskDialogPro
   const [description, setDescription] = useState(task.description);
   const [priority, setPriority] = useState(task.priority);
   const [points, setPoints] = useState(task.points.toString());
+  const [status, setStatus] = useState(task.status);
 
   useEffect(() => {
     setTitle(task.title);
     setDescription(task.description);
     setPriority(task.priority);
     setPoints(task.points.toString());
+    setStatus(task.status);
   }, [task]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,6 +37,7 @@ const EditTaskDialog = ({ task, open, onClose, onUpdateTask }: EditTaskDialogPro
       description,
       priority,
       points: Number(points),
+      status,
     };
     onUpdateTask(updatedTask);
     onClose();
@@ -76,6 +79,19 @@ const EditTaskDialog = ({ task, open, onClose, onUpdateTask }: EditTaskDialogPro
                 <SelectItem value="high">High</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todo">To Do</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="done">Done</SelectItem>
               </SelectContent>
             </Select>
           </div>

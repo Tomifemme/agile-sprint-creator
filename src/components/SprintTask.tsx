@@ -44,6 +44,32 @@ const SprintTask = ({ task, onDelete, onUpdate }: SprintTaskProps) => {
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "todo":
+        return "bg-blue-100 text-blue-800";
+      case "in-progress":
+        return "bg-purple-100 text-purple-800";
+      case "done":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "todo":
+        return "To Do";
+      case "in-progress":
+        return "In Progress";
+      case "done":
+        return "Done";
+      default:
+        return status;
+    }
+  };
+
   return (
     <>
       <Card
@@ -92,6 +118,13 @@ const SprintTask = ({ task, onDelete, onUpdate }: SprintTaskProps) => {
                 )}`}
               >
                 {task.priority}
+              </span>
+              <span
+                className={`px-2 py-1 rounded-md text-xs font-medium ${getStatusColor(
+                  task.status
+                )}`}
+              >
+                {getStatusLabel(task.status)}
               </span>
               <span className="text-xs text-muted-foreground">
                 {task.points} points
