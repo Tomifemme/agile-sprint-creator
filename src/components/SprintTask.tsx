@@ -5,7 +5,7 @@ import { Task } from "@/types/task";
 import { Sprint } from "@/types/sprint";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Grip, Trash, Edit, MoveRight } from "lucide-react";
+import { Grip, Trash, Edit, MoveRight, User as UserIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +15,7 @@ import {
 import { useState } from "react";
 import EditTaskDialog from "./EditTaskDialog";
 import { User } from "@/types/user";
-import { Avatar, AvatarGroup } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback, AvatarGroup } from "@/components/ui/avatar";
 
 const MOCK_USERS: User[] = [
   { id: "1", name: "John Doe", avatarUrl: "https://github.com/shadcn.png" },
@@ -165,18 +165,17 @@ const SprintTask = ({ task, sprints, onDelete, onUpdate, onMove }: SprintTaskPro
               <span className="text-xs text-muted-foreground">
                 {task.points} points
               </span>
-              {task.assignees.length > 0 && (
+              {task.assignees?.length > 0 && (
                 <AvatarGroup>
                   {task.assignees.map((userId) => {
                     const user = MOCK_USERS.find((u) => u.id === userId);
                     if (!user) return null;
                     return (
-                      <Avatar
-                        key={user.id}
-                        className="w-6 h-6"
-                        title={user.name}
-                      >
-                        <img src={user.avatarUrl} alt={user.name} />
+                      <Avatar key={user.id} className="w-6 h-6">
+                        <AvatarImage src={user.avatarUrl} alt={user.name} />
+                        <AvatarFallback>
+                          <UserIcon className="w-4 h-4" />
+                        </AvatarFallback>
                       </Avatar>
                     );
                   })}
