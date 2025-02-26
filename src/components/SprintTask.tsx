@@ -1,4 +1,3 @@
-
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Task } from "@/types/task";
@@ -29,9 +28,10 @@ interface SprintTaskProps {
   onDelete: (id: string) => void;
   onUpdate: (task: Task) => void;
   onMove: (taskId: string, sprintId: string) => void;
+  onMoveToBacklog?: (taskId: string) => void;
 }
 
-const SprintTask = ({ task, sprints, onDelete, onUpdate, onMove }: SprintTaskProps) => {
+const SprintTask = ({ task, sprints, onDelete, onUpdate, onMove, onMoveToBacklog }: SprintTaskProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const {
     attributes,
@@ -119,6 +119,13 @@ const SprintTask = ({ task, sprints, onDelete, onUpdate, onMove }: SprintTaskPro
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {onMoveToBacklog && (
+                        <DropdownMenuItem
+                          onClick={() => onMoveToBacklog(task.id)}
+                        >
+                          Move to Product Backlog
+                        </DropdownMenuItem>
+                      )}
                       {sprints.map((sprint) => (
                         <DropdownMenuItem
                           key={sprint.id}

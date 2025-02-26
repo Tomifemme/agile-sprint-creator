@@ -8,11 +8,14 @@ import { Task } from "@/types/task";
 import { User } from "@/types/user";
 import { Avatar } from "@/components/ui/avatar";
 import { Check } from "lucide-react";
+import { Sprint } from "@/types/sprint";
 
 interface CreateTaskDialogProps {
   open: boolean;
   onClose: () => void;
   onCreateTask: (task: Task) => void;
+  sprints?: Sprint[];
+  selectedSprintId?: string;
 }
 
 const MOCK_USERS: User[] = [
@@ -21,13 +24,14 @@ const MOCK_USERS: User[] = [
   { id: "3", name: "Bob Johnson", avatarUrl: "https://github.com/shadcn.png" },
 ];
 
-const CreateTaskDialog = ({ open, onClose, onCreateTask }: CreateTaskDialogProps) => {
+const CreateTaskDialog = ({ open, onClose, onCreateTask, sprints, selectedSprintId }: CreateTaskDialogProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState("medium");
-  const [points, setPoints] = useState("1");
+  const [priority, setPriority] = useState("");
+  const [points, setPoints] = useState("");
   const [status, setStatus] = useState<"todo" | "in-progress" | "done">("todo");
   const [assignees, setAssignees] = useState<string[]>([]);
+  const [sprintId, setSprintId] = useState(selectedSprintId || "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +39,8 @@ const CreateTaskDialog = ({ open, onClose, onCreateTask }: CreateTaskDialogProps
       id: crypto.randomUUID(),
       title,
       description,
-      priority,
-      points: Number(points),
+      priority: priority || "medium", // Default to medium if not selected
+      points: Number(points) || 1, // Default to 1 if not valid
       status,
       assignees,
     };
@@ -44,9 +48,10 @@ const CreateTaskDialog = ({ open, onClose, onCreateTask }: CreateTaskDialogProps
     setTitle("");
     setDescription("");
     setPriority("medium");
-    setPoints("1");
+    setPoints("");
     setStatus("todo");
     setAssignees([]);
+    setSprintId(selectedSprintId || "");
   };
 
   const handleStatusChange = (value: string) => {
@@ -59,6 +64,14 @@ const CreateTaskDialog = ({ open, onClose, onCreateTask }: CreateTaskDialogProps
         ? prev.filter((id) => id !== userId)
         : [...prev, userId]
     );
+  };
+
+  const handlePointsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow only positive numbers
+    if (value === "" || (/^\d+$/.test(value) && parseInt(value) >= 1)) {
+      setPoints(value);
+    }
   };
 
   return (
@@ -87,6 +100,23 @@ const CreateTaskDialog = ({ open, onClose, onCreateTask }: CreateTaskDialogProps
               placeholder="Enter task description"
             />
           </div>
+          {sprints && sprints.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="sprint">Sprint</Label>
+              <Select value={sprintId} onValueChange={setSprintId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select sprint" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sprints.map((sprint) => (
+                    <SelectItem key={sprint.id} value={sprint.id}>
+                      {sprint.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Assignees</Label>
             <div className="flex flex-wrap gap-2">
@@ -137,18 +167,14 @@ const CreateTaskDialog = ({ open, onClose, onCreateTask }: CreateTaskDialogProps
           </div>
           <div className="space-y-2">
             <Label htmlFor="points">Story Points</Label>
-            <Select value={points} onValueChange={setPoints}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select points" />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 2, 3, 5, 8, 13].map((point) => (
-                  <SelectItem key={point} value={point.toString()}>
-                    {point}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              id="points"
+              type="number"
+              min="1"
+              value={points}
+              onChange={handlePointsChange}
+              placeholder="Enter story points"
+            />
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
