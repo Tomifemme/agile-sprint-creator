@@ -12,6 +12,13 @@ import CreateTaskDialog from "@/components/CreateTaskDialog";
 import CreateSprintDialog from "@/components/CreateSprintDialog";
 import { Task } from "@/types/task";
 import { Sprint } from "@/types/sprint";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Index = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -106,13 +113,11 @@ const Index = () => {
   };
 
   const handleMoveTask = (taskId: string, targetSprintId: string) => {
-    // Find the source sprint
     const sourceSprint = sprints.find(sprint => 
       sprint.tasks.includes(taskId)
     );
 
     if (sourceSprint) {
-      // Remove task from source sprint
       setSprints((prev) =>
         prev.map((sprint) =>
           sprint.id === sourceSprint.id
@@ -121,7 +126,6 @@ const Index = () => {
         )
       );
 
-      // Add task to target sprint
       setSprints((prev) =>
         prev.map((sprint) =>
           sprint.id === targetSprintId
@@ -138,20 +142,15 @@ const Index = () => {
   };
 
   const handleMoveToProductBacklog = (taskId: string) => {
-    // Find the task in sprint tasks
     const taskToMove = tasks.find(task => task.id === taskId);
     
     if (taskToMove) {
-      // Add to product backlog
       setProductBacklogTasks(prev => [...prev, taskToMove]);
       
-      // Find the sprint that contains this task
       const sourceSprint = sprints.find(sprint => sprint.tasks.includes(taskId));
       
-      // Remove from sprint tasks
       setTasks(prev => prev.filter(task => task.id !== taskId));
       
-      // Remove from sprint
       if (sourceSprint) {
         setSprints(prev => 
           prev.map(sprint => 
@@ -170,14 +169,11 @@ const Index = () => {
   };
 
   const handleMoveToSprint = (taskId: string, sprintId: string) => {
-    // Find the task in product backlog tasks
     const taskToMove = productBacklogTasks.find(task => task.id === taskId);
     
     if (taskToMove) {
-      // Add to sprint tasks
       setTasks(prev => [...prev, taskToMove]);
       
-      // Add to specified sprint
       setSprints(prev => 
         prev.map(sprint => 
           sprint.id === sprintId 
@@ -186,7 +182,6 @@ const Index = () => {
         )
       );
       
-      // Remove from product backlog
       setProductBacklogTasks(prev => prev.filter(task => task.id !== taskId));
       
       toast({
@@ -210,6 +205,17 @@ const Index = () => {
     return tasks.filter(task => sprint.tasks.includes(task.id));
   };
 
+  const handleSelectSprint = (sprintId: string) => {
+    const sprint = sprints.find(s => s.id === sprintId);
+    if (sprint) {
+      setCurrentSprint(sprint);
+      toast({
+        title: "Sprint selected",
+        description: `${sprint.name} is now the current sprint.`,
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary to-background p-8">
       <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
@@ -230,15 +236,24 @@ const Index = () => {
             New Sprint
           </Button>
           
-          {currentSprint && (
-            <div className="text-foreground font-medium ml-auto mr-4">
-              Current Sprint: {currentSprint.name}
-            </div>
+          {sprints.length > 0 && (
+            <Select onValueChange={handleSelectSprint} value={currentSprint?.id || ""}>
+              <SelectTrigger className="w-[180px] bg-background">
+                <SelectValue placeholder="Select Sprint" />
+              </SelectTrigger>
+              <SelectContent>
+                {sprints.map((sprint) => (
+                  <SelectItem key={sprint.id} value={sprint.id}>
+                    {sprint.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
           
           <Button
             onClick={() => setIsTaskDialogOpen(true)}
-            className="bg-primary hover:bg-primary/90 text-white"
+            className="bg-primary hover:bg-primary/90 text-white ml-auto"
             disabled={!currentSprint}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -246,99 +261,92 @@ const Index = () => {
           </Button>
         </div>
 
-        {sprints.length > 0 ? (
+        {currentSprint ? (
           <div>
             <h2 className="text-2xl font-semibold mb-4">Sprint Backlog</h2>
             
-            {sprints.map(sprint => {
-              const sprintTasks = getSprintTasks(sprint.id);
-              const isCollapsed = collapsedSprints[sprint.id] || false;
+            <div key={currentSprint.id} className="mb-8">
+              <div 
+                className="flex items-center justify-between bg-card p-4 rounded-t-lg border border-border cursor-pointer"
+                onClick={() => toggleSprintCollapse(currentSprint.id)}
+              >
+                <div>
+                  <h3 className="text-xl font-medium">{currentSprint.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(currentSprint.startDate).toLocaleDateString()} - {new Date(currentSprint.endDate).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm mr-2">{getSprintTasks(currentSprint.id).length} tasks</span>
+                  {collapsedSprints[currentSprint.id] ? (
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                  )}
+                </div>
+              </div>
               
-              return (
-                <div key={sprint.id} className="mb-8">
-                  <div 
-                    className="flex items-center justify-between bg-card p-4 rounded-t-lg border border-border cursor-pointer"
-                    onClick={() => toggleSprintCollapse(sprint.id)}
-                  >
-                    <div>
-                      <h3 className="text-xl font-medium">{sprint.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-sm mr-2">{sprintTasks.length} tasks</span>
-                      {isCollapsed ? (
-                        <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                      ) : (
-                        <ChevronUp className="w-5 h-5 text-muted-foreground" />
-                      )}
-                    </div>
-                  </div>
+              {!collapsedSprints[currentSprint.id] && (
+                <div className="bg-card/50 p-4 rounded-b-lg border-x border-b border-border">
+                  <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={getSprintTasks(currentSprint.id)} strategy={verticalListSortingStrategy}>
+                      <div className="space-y-4">
+                        {getSprintTasks(currentSprint.id).map((task) => (
+                          <SprintTask
+                            key={task.id}
+                            task={task}
+                            sprints={sprints.filter((s) => s.id !== currentSprint.id)}
+                            onMove={handleMoveTask}
+                            onDelete={(id) => {
+                              setTasks((prev) => prev.filter((t) => t.id !== id));
+                              setSprints((prev) =>
+                                prev.map((s) => ({
+                                  ...s,
+                                  tasks: s.tasks.filter((taskId) => taskId !== id),
+                                }))
+                              );
+                              toast({
+                                title: "Task deleted",
+                                description: "The task has been removed from the sprint backlog.",
+                              });
+                            }}
+                            onUpdate={(updatedTask) => {
+                              setTasks((prev) =>
+                                prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+                              );
+                              toast({
+                                title: "Task updated",
+                                description: "The task has been successfully updated.",
+                              });
+                            }}
+                            onMoveToBacklog={handleMoveToProductBacklog}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                   
-                  {!isCollapsed && (
-                    <div className="bg-card/50 p-4 rounded-b-lg border-x border-b border-border">
-                      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                        <SortableContext items={sprintTasks} strategy={verticalListSortingStrategy}>
-                          <div className="space-y-4">
-                            {sprintTasks.map((task) => (
-                              <SprintTask
-                                key={task.id}
-                                task={task}
-                                sprints={sprints.filter((s) => s.id !== sprint.id)}
-                                onMove={handleMoveTask}
-                                onDelete={(id) => {
-                                  setTasks((prev) => prev.filter((t) => t.id !== id));
-                                  setSprints((prev) =>
-                                    prev.map((s) => ({
-                                      ...s,
-                                      tasks: s.tasks.filter((taskId) => taskId !== id),
-                                    }))
-                                  );
-                                  toast({
-                                    title: "Task deleted",
-                                    description: "The task has been removed from the sprint backlog.",
-                                  });
-                                }}
-                                onUpdate={(updatedTask) => {
-                                  setTasks((prev) =>
-                                    prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
-                                  );
-                                  toast({
-                                    title: "Task updated",
-                                    description: "The task has been successfully updated.",
-                                  });
-                                }}
-                                onMoveToBacklog={handleMoveToProductBacklog}
-                              />
-                            ))}
-                          </div>
-                        </SortableContext>
-                      </DndContext>
-                      
-                      {sprintTasks.length === 0 && (
-                        <div className="text-center py-6">
-                          <p className="text-muted-foreground">
-                            No tasks in this sprint. 
-                            {sprint.id === currentSprint?.id && " Click the \"Add Task\" button to create a task."}
-                          </p>
-                        </div>
-                      )}
+                  {getSprintTasks(currentSprint.id).length === 0 && (
+                    <div className="text-center py-6">
+                      <p className="text-muted-foreground">
+                        No tasks in this sprint. Click the "Add Task" button to create a task.
+                      </p>
                     </div>
                   )}
                 </div>
-              );
-            })}
+              )}
+            </div>
           </div>
         ) : (
           <div className="text-center py-12 bg-card rounded-lg border border-border animate-fade-up">
             <p className="text-muted-foreground">
-              Create a new sprint to get started.
+              {sprints.length > 0 
+                ? "Select a sprint using the dropdown above." 
+                : "Create a new sprint to get started."}
             </p>
           </div>
         )}
 
-        {/* Product Backlog Section */}
         <div className="mt-12">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold">Product Backlog</h2>
