@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -30,6 +30,55 @@ const Index = () => {
   const [isSprintDialogOpen, setIsSprintDialogOpen] = useState(false);
   const [collapsedSprints, setCollapsedSprints] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
+
+  useEffect(() => {
+    const storedTasks = localStorage.getItem('tasks');
+    if (storedTasks) {
+      setTasks(JSON.parse(storedTasks));
+    }
+
+    const storedProductBacklogTasks = localStorage.getItem('productBacklogTasks');
+    if (storedProductBacklogTasks) {
+      setProductBacklogTasks(JSON.parse(storedProductBacklogTasks));
+    }
+
+    const storedSprints = localStorage.getItem('sprints');
+    if (storedSprints) {
+      setSprints(JSON.parse(storedSprints));
+    }
+
+    const storedCurrentSprint = localStorage.getItem('currentSprint');
+    if (storedCurrentSprint) {
+      setCurrentSprint(JSON.parse(storedCurrentSprint));
+    }
+
+    const storedCollapsedSprints = localStorage.getItem('collapsedSprints');
+    if (storedCollapsedSprints) {
+      setCollapsedSprints(JSON.parse(storedCollapsedSprints));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks]);
+
+  useEffect(() => {
+    localStorage.setItem('productBacklogTasks', JSON.stringify(productBacklogTasks));
+  }, [productBacklogTasks]);
+
+  useEffect(() => {
+    localStorage.setItem('sprints', JSON.stringify(sprints));
+  }, [sprints]);
+
+  useEffect(() => {
+    if (currentSprint) {
+      localStorage.setItem('currentSprint', JSON.stringify(currentSprint));
+    }
+  }, [currentSprint]);
+
+  useEffect(() => {
+    localStorage.setItem('collapsedSprints', JSON.stringify(collapsedSprints));
+  }, [collapsedSprints]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -216,6 +265,25 @@ const Index = () => {
     }
   };
 
+  const handleResetData = () => {
+    localStorage.removeItem('tasks');
+    localStorage.removeItem('productBacklogTasks');
+    localStorage.removeItem('sprints');
+    localStorage.removeItem('currentSprint');
+    localStorage.removeItem('collapsedSprints');
+    
+    setTasks([]);
+    setProductBacklogTasks([]);
+    setSprints([]);
+    setCurrentSprint(null);
+    setCollapsedSprints({});
+    
+    toast({
+      title: "Data reset",
+      description: "All data has been cleared from localStorage.",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary to-background p-8">
       <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
@@ -397,6 +465,16 @@ const Index = () => {
               </p>
             </div>
           )}
+        </div>
+
+        <div className="mt-8 flex justify-end">
+          <Button 
+            variant="outline" 
+            className="text-destructive hover:bg-destructive/10" 
+            onClick={handleResetData}
+          >
+            Reset All Data
+          </Button>
         </div>
 
         <CreateTaskDialog
