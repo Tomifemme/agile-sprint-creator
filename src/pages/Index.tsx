@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import {
@@ -6,7 +5,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Button } from "@/components/ui/button";
-import { Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, ChevronDown, ChevronUp, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SprintTask from "@/components/SprintTask";
 import CreateTaskDialog from "@/components/CreateTaskDialog";
@@ -20,103 +19,126 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  fetchTasks, 
-  fetchSprints, 
-  createTask, 
-  updateTask, 
-  deleteTask, 
-  createSprint, 
-  updateSprint,
-  deleteTaskFromSprint,
-  addTaskToSprint 
-} from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { DatabaseService } from "@/services/DatabaseService";
 
 const Index = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [productBacklogTasks, setProductBacklogTasks] = useState<Task[]>([]);
+  const [sprints, setSprints] = useState<Sprint[]>([]);
   const [currentSprint, setCurrentSprint] = useState<Sprint | null>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [isProductBacklogTaskDialogOpen, setIsProductBacklogTaskDialogOpen] = useState(false);
   const [isSprintDialogOpen, setIsSprintDialogOpen] = useState(false);
   const [collapsedSprints, setCollapsedSprints] = useState<Record<string, boolean>>({});
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { user, logout } = useAuth();
+  const dbService = user ? new DatabaseService(user.id) : null;
 
-  // Fetch tasks and sprints
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: fetchTasks,
-  });
-
-  const { data: sprints = [] } = useQuery({
-    queryKey: ['sprints'],
-    queryFn: fetchSprints,
-  });
-
-  // Mutations for tasks
-  const createTaskMutation = useMutation({
-    mutationFn: createTask,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
-  });
-
-  const updateTaskMutation = useMutation({
-    mutationFn: updateTask,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
-  });
-
-  const deleteTaskMutation = useMutation({
-    mutationFn: deleteTask,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
-  });
-
-  // Mutations for sprints
-  const createSprintMutation = useMutation({
-    mutationFn: createSprint,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sprints'] });
-    },
-  });
-
-  const updateSprintMutation = useMutation({
-    mutationFn: updateSprint,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sprints'] });
-    },
-  });
-
-  // Initialize current sprint if needed
   useEffect(() => {
-    if (sprints.length > 0 && !currentSprint) {
-      setCurrentSprint(sprints[0]);
+    const loadData = async () => {
+      if (!dbService) return;
+      
+      try {
+        setIsLoading(true);
+        
+        const loadedSprints = await dbService.getSprints();
+        setSprints(loadedSprints);
+        
+        if (loadedSprints.length > 0 && !currentSprint) {
+          setCurrentSprint(loadedSprints[0]);
+        }
+        
+        const loadedTasks = await dbService.getTasks();
+        setTasks(loadedTasks);
+        
+        const loadedBacklog = await dbService.getProductBacklog();
+        setProductBacklogTasks(loadedBacklog);
+      } catch (error) {
+        console.error('Failed to load data', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load your sprint data',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (user) {
+      loadData();
     }
-  }, [sprints, currentSprint]);
+  }, [user, toast]);
 
-  // Product backlog tasks are tasks that are not in any sprint
-  const productBacklogTasks = tasks.filter(
-    task => !sprints.some(sprint => sprint.tasks.includes(task.id))
-  );
+  useEffect(() => {
+    const saveTasks = async () => {
+      if (!dbService || isLoading) return;
+      
+      try {
+        await dbService.saveTasks(tasks);
+      } catch (error) {
+        console.error('Failed to save tasks', error);
+      }
+    };
+    
+    if (user && !isLoading) {
+      saveTasks();
+    }
+  }, [tasks, user, isLoading]);
+
+  useEffect(() => {
+    const saveSprints = async () => {
+      if (!dbService || isLoading) return;
+      
+      try {
+        await dbService.saveSprints(sprints);
+      } catch (error) {
+        console.error('Failed to save sprints', error);
+      }
+    };
+    
+    if (user && !isLoading) {
+      saveSprints();
+    }
+  }, [sprints, user, isLoading]);
+
+  useEffect(() => {
+    const saveProductBacklog = async () => {
+      if (!dbService || isLoading) return;
+      
+      try {
+        await dbService.saveProductBacklog(productBacklogTasks);
+      } catch (error) {
+        console.error('Failed to save product backlog', error);
+      }
+    };
+    
+    if (user && !isLoading) {
+      saveProductBacklog();
+    }
+  }, [productBacklogTasks, user, isLoading]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const activeTask = tasks.find(task => task.id === active.id);
-      const overTask = tasks.find(task => task.id === over.id);
-      
-      if (activeTask && overTask) {
-        // This is just a UI reordering - in a real app you'd persist this order
-        // For now, just show a toast
-        toast({
-          title: "Task reordered",
-          description: "The task has been moved to a new position.",
-        });
-      }
+      setTasks((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        const newItems = [...items];
+        const [removed] = newItems.splice(oldIndex, 1);
+        newItems.splice(newIndex, 0, removed);
+
+        return newItems;
+      });
+
+      toast({
+        title: "Task reordered",
+        description: "The task has been moved to a new position.",
+      });
     }
   };
 
@@ -124,8 +146,17 @@ const Index = () => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      // This is just a UI reordering - in a real app you'd persist this order
-      // For now, just show a toast
+      setProductBacklogTasks((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        const newItems = [...items];
+        const [removed] = newItems.splice(oldIndex, 1);
+        newItems.splice(newIndex, 0, removed);
+
+        return newItems;
+      });
+
       toast({
         title: "Task reordered",
         description: "The task has been moved to a new position in product backlog.",
@@ -133,14 +164,17 @@ const Index = () => {
     }
   };
 
-  const handleCreateTask = async (task: Task) => {
-    await createTaskMutation.mutateAsync(task);
-    
+  const handleCreateTask = (task: Task) => {
+    setTasks((prev) => [...prev, task]);
     if (currentSprint) {
-      await addTaskToSprint(currentSprint.id, task.id);
-      queryClient.invalidateQueries({ queryKey: ['sprints'] });
+      setSprints((prev) =>
+        prev.map((sprint) =>
+          sprint.id === currentSprint.id
+            ? { ...sprint, tasks: [...sprint.tasks, task.id] }
+            : sprint
+        )
+      );
     }
-    
     setIsTaskDialogOpen(false);
     toast({
       title: "Task created",
@@ -148,8 +182,8 @@ const Index = () => {
     });
   };
 
-  const handleCreateProductBacklogTask = async (task: Task) => {
-    await createTaskMutation.mutateAsync(task);
+  const handleCreateProductBacklogTask = (task: Task) => {
+    setProductBacklogTasks((prev) => [...prev, task]);
     setIsProductBacklogTaskDialogOpen(false);
     toast({
       title: "Task created",
@@ -157,8 +191,8 @@ const Index = () => {
     });
   };
 
-  const handleCreateSprint = async (sprint: Sprint) => {
-    await createSprintMutation.mutateAsync(sprint);
+  const handleCreateSprint = (sprint: Sprint) => {
+    setSprints((prev) => [...prev, sprint]);
     setCurrentSprint(sprint);
     setIsSprintDialogOpen(false);
     toast({
@@ -167,21 +201,28 @@ const Index = () => {
     });
   };
 
-  const handleMoveTask = async (taskId: string, targetSprintId: string) => {
+  const handleMoveTask = (taskId: string, targetSprintId: string) => {
     const sourceSprint = sprints.find(sprint => 
       sprint.tasks.includes(taskId)
     );
 
     if (sourceSprint) {
-      // Remove task from source sprint
-      await deleteTaskFromSprint(sourceSprint.id, taskId);
-      
-      // Add task to target sprint
-      await addTaskToSprint(targetSprintId, taskId);
-      
-      // Refresh sprints data
-      queryClient.invalidateQueries({ queryKey: ['sprints'] });
-      
+      setSprints((prev) =>
+        prev.map((sprint) =>
+          sprint.id === sourceSprint.id
+            ? { ...sprint, tasks: sprint.tasks.filter((id) => id !== taskId) }
+            : sprint
+        )
+      );
+
+      setSprints((prev) =>
+        prev.map((sprint) =>
+          sprint.id === targetSprintId
+            ? { ...sprint, tasks: [...sprint.tasks, taskId] }
+            : sprint
+        )
+      );
+
       toast({
         title: "Task moved",
         description: "Task has been moved to a different sprint.",
@@ -189,15 +230,25 @@ const Index = () => {
     }
   };
 
-  const handleMoveToProductBacklog = async (taskId: string) => {
-    const sourceSprint = sprints.find(sprint => sprint.tasks.includes(taskId));
+  const handleMoveToProductBacklog = (taskId: string) => {
+    const taskToMove = tasks.find(task => task.id === taskId);
     
-    if (sourceSprint) {
-      // Remove task from sprint
-      await deleteTaskFromSprint(sourceSprint.id, taskId);
+    if (taskToMove) {
+      setProductBacklogTasks(prev => [...prev, taskToMove]);
       
-      // Refresh sprints data
-      queryClient.invalidateQueries({ queryKey: ['sprints'] });
+      const sourceSprint = sprints.find(sprint => sprint.tasks.includes(taskId));
+      
+      setTasks(prev => prev.filter(task => task.id !== taskId));
+      
+      if (sourceSprint) {
+        setSprints(prev => 
+          prev.map(sprint => 
+            sprint.id === sourceSprint.id 
+              ? { ...sprint, tasks: sprint.tasks.filter(id => id !== taskId) } 
+              : sprint
+          )
+        );
+      }
       
       toast({
         title: "Task moved to Product Backlog",
@@ -206,17 +257,27 @@ const Index = () => {
     }
   };
 
-  const handleMoveToSprint = async (taskId: string, sprintId: string) => {
-    // Add task to sprint
-    await addTaskToSprint(sprintId, taskId);
+  const handleMoveToSprint = (taskId: string, sprintId: string) => {
+    const taskToMove = productBacklogTasks.find(task => task.id === taskId);
     
-    // Refresh sprints data
-    queryClient.invalidateQueries({ queryKey: ['sprints'] });
-    
-    toast({
-      title: "Task moved to Sprint",
-      description: "Task has been moved to the selected sprint.",
-    });
+    if (taskToMove) {
+      setTasks(prev => [...prev, taskToMove]);
+      
+      setSprints(prev => 
+        prev.map(sprint => 
+          sprint.id === sprintId 
+            ? { ...sprint, tasks: [...sprint.tasks, taskId] } 
+            : sprint
+        )
+      );
+      
+      setProductBacklogTasks(prev => prev.filter(task => task.id !== taskId));
+      
+      toast({
+        title: "Task moved to Sprint",
+        description: "Task has been moved to the selected sprint.",
+      });
+    }
   };
 
   const toggleSprintCollapse = (sprintId: string) => {
@@ -244,10 +305,47 @@ const Index = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // The AuthContext will handle the state update and redirection
+    } catch (error) {
+      console.error('Logout failed', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to log out. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary to-background">
+        <div className="text-center">
+          <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mb-4 mx-auto"></div>
+          <p className="text-muted-foreground">Loading your sprint backlog...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary to-background p-8">
       <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
-        <header className="text-center space-y-4">
+        <header className="text-center space-y-4 relative">
+          <div className="absolute right-0 top-0">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
+          
           <h1 className="text-4xl font-bold text-primary">Sprint Backlog</h1>
           <p className="text-muted-foreground">
             Organize and prioritize your sprint tasks
@@ -325,15 +423,23 @@ const Index = () => {
                             task={task}
                             sprints={sprints.filter((s) => s.id !== currentSprint.id)}
                             onMove={handleMoveTask}
-                            onDelete={async (id) => {
-                              await deleteTaskMutation.mutateAsync(id);
+                            onDelete={(id) => {
+                              setTasks((prev) => prev.filter((t) => t.id !== id));
+                              setSprints((prev) =>
+                                prev.map((s) => ({
+                                  ...s,
+                                  tasks: s.tasks.filter((taskId) => taskId !== id),
+                                }))
+                              );
                               toast({
                                 title: "Task deleted",
                                 description: "The task has been removed from the sprint backlog.",
                               });
                             }}
-                            onUpdate={async (updatedTask) => {
-                              await updateTaskMutation.mutateAsync(updatedTask);
+                            onUpdate={(updatedTask) => {
+                              setTasks((prev) =>
+                                prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+                              );
                               toast({
                                 title: "Task updated",
                                 description: "The task has been successfully updated.",
@@ -388,15 +494,17 @@ const Index = () => {
                     task={task}
                     sprints={sprints}
                     onMove={(taskId, sprintId) => handleMoveToSprint(taskId, sprintId)}
-                    onDelete={async (id) => {
-                      await deleteTaskMutation.mutateAsync(id);
+                    onDelete={(id) => {
+                      setProductBacklogTasks((prev) => prev.filter((t) => t.id !== id));
                       toast({
                         title: "Task deleted",
                         description: "The task has been removed from the product backlog.",
                       });
                     }}
-                    onUpdate={async (updatedTask) => {
-                      await updateTaskMutation.mutateAsync(updatedTask);
+                    onUpdate={(updatedTask) => {
+                      setProductBacklogTasks((prev) =>
+                        prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+                      );
                       toast({
                         title: "Task updated",
                         description: "The task has been successfully updated.",

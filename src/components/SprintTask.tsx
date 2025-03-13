@@ -1,3 +1,4 @@
+
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Task } from "@/types/task";
@@ -17,9 +18,9 @@ import { User } from "@/types/user";
 import { Avatar, AvatarImage, AvatarFallback, AvatarGroup } from "@/components/ui/avatar";
 
 const MOCK_USERS: User[] = [
-  { id: "1", name: "John Doe", avatarUrl: "https://github.com/shadcn.png" },
-  { id: "2", name: "Jane Smith", avatarUrl: "https://github.com/shadcn.png" },
-  { id: "3", name: "Bob Johnson", avatarUrl: "https://github.com/shadcn.png" },
+  { id: "1", name: "John Doe", email: "john.doe@example.com", avatarUrl: "https://github.com/shadcn.png" },
+  { id: "2", name: "Jane Smith", email: "jane.smith@example.com", avatarUrl: "https://github.com/shadcn.png" },
+  { id: "3", name: "Bob Johnson", email: "bob.johnson@example.com", avatarUrl: "https://github.com/shadcn.png" },
 ];
 
 interface SprintTaskProps {
@@ -204,3 +205,4 @@ const SprintTask = ({ task, sprints, onDelete, onUpdate, onMove, onMoveToBacklog
 };
 
 export default SprintTask;
+
