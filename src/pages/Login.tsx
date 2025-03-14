@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,24 +7,32 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
 
-  // Add effect to redirect when auth state changes
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
+    if (isAuthenticated && !isLoading) {
+      navigate("/projects");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!formData.email || !formData.password) {
       toast({
         title: 'Error',
         description: 'Please enter both email and password',
@@ -34,17 +41,14 @@ const Login = () => {
       return;
     }
     
-    setIsLoading(true);
+    setIsLoggingIn(true);
     
     try {
-      await login(email, password);
-      // Auth state is handled in AuthContext with Supabase listeners
-      // and the useEffect above will handle redirection
+      await login(formData.email, formData.password);
     } catch (error) {
-      // Error is handled in the login function
       console.error('Login error:', error);
     } finally {
-      setIsLoading(false);
+      setIsLoggingIn(false);
     }
   };
 
@@ -63,8 +67,8 @@ const Login = () => {
               id="email"
               type="email"
               placeholder="your.email@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleChange}
               required
             />
           </div>
@@ -75,8 +79,8 @@ const Login = () => {
               id="password"
               type="password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={handleChange}
               required
             />
           </div>
@@ -84,9 +88,9 @@ const Login = () => {
           <Button
             type="submit"
             className="w-full"
-            disabled={isLoading}
+            disabled={isLoggingIn}
           >
-            {isLoading ? 'Logging in...' : 'Log in'}
+            {isLoggingIn ? 'Logging in...' : 'Log in'}
           </Button>
         </form>
         

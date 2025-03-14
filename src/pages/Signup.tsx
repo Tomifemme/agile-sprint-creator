@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -8,19 +7,34 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
 const Signup = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { signup } = useAuth();
   const navigate = useNavigate();
+  const { signup, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
+  const [isSigningUp, setIsSigningUp] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      navigate("/projects");
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email || !password || !confirmPassword) {
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       toast({
         title: 'Error',
         description: 'Please fill out all fields',
@@ -29,7 +43,7 @@ const Signup = () => {
       return;
     }
     
-    if (password !== confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       toast({
         title: 'Error',
         description: 'Passwords do not match',
@@ -38,16 +52,16 @@ const Signup = () => {
       return;
     }
     
-    setIsLoading(true);
+    setIsSigningUp(true);
     
     try {
-      await signup(email, password, name);
+      await signup(formData.email, formData.password, formData.name);
       // Auth state is handled in AuthContext with Supabase listeners
     } catch (error) {
       // Error is handled in the signup function
       console.error('Signup error:', error);
     } finally {
-      setIsLoading(false);
+      setIsSigningUp(false);
     }
   };
 
@@ -66,8 +80,8 @@ const Signup = () => {
               id="name"
               type="text"
               placeholder="John Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={formData.name}
+              onChange={handleChange}
               required
             />
           </div>
@@ -78,8 +92,8 @@ const Signup = () => {
               id="email"
               type="email"
               placeholder="your.email@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleChange}
               required
             />
           </div>
@@ -90,8 +104,8 @@ const Signup = () => {
               id="password"
               type="password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={handleChange}
               required
             />
           </div>
@@ -102,8 +116,8 @@ const Signup = () => {
               id="confirmPassword"
               type="password"
               placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={formData.confirmPassword}
+              onChange={handleChange}
               required
             />
           </div>
@@ -111,9 +125,9 @@ const Signup = () => {
           <Button
             type="submit"
             className="w-full"
-            disabled={isLoading}
+            disabled={isSigningUp}
           >
-            {isLoading ? 'Creating account...' : 'Sign up'}
+            {isSigningUp ? 'Creating account...' : 'Sign up'}
           </Button>
         </form>
         

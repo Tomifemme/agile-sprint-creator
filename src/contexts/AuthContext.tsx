@@ -1,8 +1,10 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { AuthState, User } from '@/types/user';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -96,6 +98,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: 'Success',
         description: 'Logged in successfully',
       });
+
+      // Redirect happens in the component now via useNavigate
     } catch (error) {
       console.error('Login failed', error);
       toast({
@@ -125,6 +129,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: 'Success',
         description: 'Your account has been created successfully',
       });
+
+      // Redirect happens in the component now via useNavigate
     } catch (error) {
       console.error('Signup failed', error);
       toast({

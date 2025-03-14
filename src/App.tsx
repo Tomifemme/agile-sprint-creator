@@ -10,6 +10,8 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
+import Projects from "./pages/Projects";
+import Project from "./pages/Project";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +35,25 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            
+            {/* New agile project routes */}
+            <Route
+              path="/projects"
+              element={
+                <ProtectedRoute>
+                  <Projects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/project/:projectId"
+              element={
+                <ProtectedRoute>
+                  <Project />
+                </ProtectedRoute>
+              }
+            />
+            
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

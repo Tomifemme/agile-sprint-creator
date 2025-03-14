@@ -157,3 +157,70 @@ export async function addTaskToSprint(sprintId: string, taskId: string) {
   
   return true;
 }
+
+// Projects
+export async function fetchProjects() {
+  const { data, error } = await supabase.from('projects').select('*');
+  
+  if (error) {
+    console.error('Error fetching projects:', error);
+    return [];
+  }
+  
+  return data;
+}
+
+export async function createProject(project: { title: string; user_id: string; assignees: string[] }) {
+  const { error } = await supabase.from('projects').insert(project);
+  
+  if (error) {
+    console.error('Error creating project:', error);
+    return false;
+  }
+  
+  return true;
+}
+
+export async function getProjectById(id: string) {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching project:', error);
+    return null;
+  }
+  
+  return data;
+}
+
+export async function fetchTasksForProject(projectId: string) {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('project_id', projectId);
+  
+  if (error) {
+    console.error('Error fetching tasks for project:', error);
+    return [];
+  }
+  
+  return data as Task[];
+}
+
+export async function fetchSprintsForProject(projectId: string) {
+  const { data, error } = await supabase
+    .from('sprints')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('startDate', { ascending: true });
+  
+  if (error) {
+    console.error('Error fetching sprints for project:', error);
+    return [];
+  }
+  
+  return data as Sprint[];
+}
