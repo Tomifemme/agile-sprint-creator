@@ -110,6 +110,9 @@ const SprintDetails = ({ sprint, tasks, projectId }: SprintDetailsProps) => {
   const completedPoints = doneTasks.reduce((sum, task) => sum + task.points, 0);
   const progressPercentage = tasks.length > 0 ? Math.round((completedPoints / totalPoints) * 100) : 0;
 
+  // Define empty sprints array for SprintTask component
+  const emptySprintArray: Sprint[] = [];
+
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -174,9 +177,17 @@ const SprintDetails = ({ sprint, tasks, projectId }: SprintDetailsProps) => {
               todoTasks.map(task => (
                 <SprintTask 
                   key={task.id} 
-                  task={task} 
-                  onRemove={() => handleRemoveTask(task.id)}
-                  onStatusChange={(status) => handleStatusChange(task.id, status)}
+                  task={task}
+                  sprints={emptySprintArray}
+                  onDelete={() => handleRemoveTask(task.id)}
+                  onUpdate={(updatedTask) => {
+                    // This is just a placeholder since we're not fully implementing task updates here
+                    console.log("Task updated:", updatedTask);
+                  }}
+                  onMove={() => {
+                    // This is just a placeholder since we're not implementing move functionality
+                    console.log("Move task");
+                  }}
                 />
               ))
             )}
@@ -191,9 +202,19 @@ const SprintDetails = ({ sprint, tasks, projectId }: SprintDetailsProps) => {
               inProgressTasks.map(task => (
                 <SprintTask 
                   key={task.id} 
-                  task={task} 
-                  onRemove={() => handleRemoveTask(task.id)}
-                  onStatusChange={(status) => handleStatusChange(task.id, status)}
+                  task={task}
+                  sprints={emptySprintArray}
+                  onDelete={() => handleRemoveTask(task.id)}
+                  onUpdate={(updatedTask) => {
+                    // Update the task status if it changed
+                    if (updatedTask.status !== task.status) {
+                      handleStatusChange(task.id, updatedTask.status);
+                    }
+                  }}
+                  onMove={() => {
+                    // This is just a placeholder since we're not implementing move functionality
+                    console.log("Move task");
+                  }}
                 />
               ))
             )}
@@ -208,9 +229,19 @@ const SprintDetails = ({ sprint, tasks, projectId }: SprintDetailsProps) => {
               doneTasks.map(task => (
                 <SprintTask 
                   key={task.id} 
-                  task={task} 
-                  onRemove={() => handleRemoveTask(task.id)}
-                  onStatusChange={(status) => handleStatusChange(task.id, status)}
+                  task={task}
+                  sprints={emptySprintArray}
+                  onDelete={() => handleRemoveTask(task.id)}
+                  onUpdate={(updatedTask) => {
+                    // Update the task status if it changed
+                    if (updatedTask.status !== task.status) {
+                      handleStatusChange(task.id, updatedTask.status);
+                    }
+                  }}
+                  onMove={() => {
+                    // This is just a placeholder since we're not implementing move functionality
+                    console.log("Move task");
+                  }}
                 />
               ))
             )}

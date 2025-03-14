@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,7 +37,6 @@ const Project = () => {
   const [selectedSprint, setSelectedSprint] = useState<string | null>(null);
   const [expandedSprints, setExpandedSprints] = useState<Record<string, boolean>>({});
 
-  // Fetch project details
   const { data: project, isLoading: isProjectLoading } = useQuery({
     queryKey: ["project", projectId],
     queryFn: async () => {
@@ -61,7 +59,6 @@ const Project = () => {
     },
   });
 
-  // Fetch tasks for this project
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasks", projectId],
     queryFn: async () => {
@@ -84,7 +81,6 @@ const Project = () => {
     },
   });
 
-  // Fetch sprints for this project
   const { data: sprints = [], isLoading: isSprintsLoading } = useQuery({
     queryKey: ["sprints", projectId],
     queryFn: async () => {
@@ -107,7 +103,6 @@ const Project = () => {
     },
   });
 
-  // Create task mutation
   const createTaskMutation = useMutation({
     mutationFn: async (task: Omit<Task, "id" | "status" | "assignees">) => {
       if (!user) throw new Error("User not authenticated");
@@ -146,7 +141,6 @@ const Project = () => {
     },
   });
 
-  // Create sprint mutation
   const createSprintMutation = useMutation({
     mutationFn: async (sprint: Omit<Sprint, "id" | "tasks">) => {
       if (!user) throw new Error("User not authenticated");
@@ -184,10 +178,8 @@ const Project = () => {
     },
   });
 
-  // Add task to sprint mutation
   const addTaskToSprintMutation = useMutation({
     mutationFn: async ({ sprintId, taskId }: { sprintId: string; taskId: string }) => {
-      // First get the current sprint
       const { data: sprintData, error: sprintError } = await supabase
         .from("sprints")
         .select("tasks")
@@ -196,7 +188,6 @@ const Project = () => {
         
       if (sprintError) throw sprintError;
       
-      // Update the sprint with the new task
       const updatedTasks = [...(sprintData.tasks || []), taskId];
       
       const { error: updateError } = await supabase
@@ -366,8 +357,9 @@ const Project = () => {
                   <DialogTitle>Create New Task</DialogTitle>
                 </DialogHeader>
                 <CreateTaskDialog 
+                  open={isCreateTaskOpen}
+                  onClose={() => setIsCreateTaskOpen(false)}
                   onCreateTask={handleCreateTask}
-                  onCancel={() => setIsCreateTaskOpen(false)}
                 />
               </DialogContent>
             </Dialog>
